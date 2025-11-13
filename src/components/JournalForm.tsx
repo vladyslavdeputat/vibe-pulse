@@ -11,7 +11,7 @@ import type {
   JournalFormProps,
   JournalFormValues,
 } from "@/types";
-import { journalMoodOptions, journalTagSuggestions } from "@/types/constants";
+import { journalMoodOptions, journalTagSuggestions } from "@/constants";
 
 const analysisSchema = z.object({
   mood: z.string(),
