@@ -15,3 +15,11 @@ export const journalTagSuggestions = [
   "Mindfulness",
   "Goals",
 ];
+
+export const journalHistoryTableHeaderItems = [
+  { label: "Date" },
+  { label: "Mood" },
+  { label: "Stress (1-10)" },
+  { label: "Topic" },
+  { label: "Advice" },
+];

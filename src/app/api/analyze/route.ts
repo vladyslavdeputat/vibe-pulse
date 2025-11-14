@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const analysisSchema = z.object({
   mood: z.string(),
@@ -13,6 +15,15 @@ const analysisSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "You must be signed in to analyze journal entries." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const text = typeof body?.text === "string" ? body.text.trim() : "";
 
@@ -42,7 +53,37 @@ export async function POST(req: Request) {
       `,
     });
 
-    return NextResponse.json(object);
+    const supabase = createAdminClient();
+    const { data, error: insertError } = await supabase
+      .from("journal_entries")
+      .insert({
+        user_id: userId,
+        text,
+        mood: object.mood,
+        stress_level: object.stress_level,
+        topic: object.topic,
+        advice: object.advice,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("[analyze] Supabase insert error:", insertError);
+      return NextResponse.json(
+        { error: "Failed to save journal analysis." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      mood: object.mood,
+      stress_level: object.stress_level,
+      topic: object.topic,
+      summary: object.summary,
+      advice: object.advice,
+      record: data,
+    });
   } catch (error) {
     console.error("[analyze] Error:", error);
     return NextResponse.json(

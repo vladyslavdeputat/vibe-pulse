@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   SignedIn,
@@ -18,8 +16,13 @@ const Header = () => {
         {/* Logo/Brand */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Your App
+            <span className="text-xl font-semibold tracking-tight uppercase">
+              <span className="bg-gradient-to-r from-emerald-600 to-lime-400 bg-clip-text text-transparent drop-shadow">
+                Vibe
+              </span>
+              <span className="ml-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 bg-clip-text text-transparent drop-shadow-lg">
+                Pulse
+              </span>
             </span>
           </Link>
 
@@ -36,6 +39,12 @@ const Header = () => {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Dashboard
+            </Link>
+            <Link
+              href="/journal"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Journal
             </Link>
           </nav>
         </div>

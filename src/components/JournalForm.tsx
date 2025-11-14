@@ -1,118 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { z } from "zod";
+import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import type {
-  JournalAnalysis,
-  JournalFormProps,
-  JournalFormValues,
-} from "@/types";
-import { journalMoodOptions, journalTagSuggestions } from "@/constants";
+import type { JournalEntry } from "@/types";
+import analyzeJournalEntry from "@/lib/services/analyze";
+import { StressStatus, StressLevelBar } from "@/components/StressIndicator";
 
-const analysisSchema = z.object({
-  mood: z.string(),
-  stress_level: z.number(),
-  topic: z.string(),
-  summary: z.string(),
-  advice: z.string(),
-});
+const JournalForm = () => {
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string>("");
+  const [analysis, setAnalysis] = useState<JournalEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-const JournalForm = ({ initialValues }: JournalFormProps) => {
-  const [text, setText] = useState(
-    initialValues?.text ??
-      "I feel overwhelmed with work but grateful for my family"
-  );
-  const [mood, setMood] = useState(initialValues?.mood ?? "");
-  const [stressLevel, setStressLevel] = useState(
-    initialValues?.stressLevel ?? 5
-  );
-  const [tags, setTags] = useState<string[]>(
-    () =>
-      initialValues?.tags?.filter((tag): tag is string =>
-        Boolean(tag && tag.trim().length > 0)
-      ) ?? []
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<JournalAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const isLoading = isAnalyzing;
   const characterCount = text.trim().length;
-
-  const inactiveSuggestions = useMemo(
-    () => journalTagSuggestions.filter((tag) => !tags.includes(tag)),
-    [tags]
-  );
-
-  const toggleTag = (tag: string) => {
-    setTags((prev) =>
-      prev.includes(tag)
-        ? prev.filter((value) => value !== tag)
-        : [...prev, tag]
-    );
-  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const payload: JournalFormValues = {
-      text: text.trim(),
-      mood: mood || null,
-      stressLevel,
-      tags,
-    };
-
-    if (!payload.text) {
+    if (!text) {
       setError("Please add a journal entry before analyzing.");
       return;
     }
 
-    setError(null);
+    setError("");
     setAnalysis(null);
-    setIsAnalyzing(true);
+    setIsLoading(true);
 
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: payload.text }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to analyze journal entry. Please try again.");
-      }
-
-      const json = await response.json();
-      const parsed = analysisSchema.safeParse(json);
-
-      if (!parsed.success) {
-        throw new Error("Unexpected response from analyzer. Please try again.");
-      }
-
-      const normalized: JournalAnalysis = {
-        mood: parsed.data.mood,
-        stressLevel: parsed.data.stress_level,
-        topic: parsed.data.topic,
-        summary: parsed.data.summary,
-        advice: parsed.data.advice,
-      };
-
-      setAnalysis(normalized);
-    } catch (submissionError) {
-      const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : "Something went wrong while analyzing your entry.";
-      setError(message);
-    } finally {
-      setIsAnalyzing(false);
-    }
+    await analyzeJournalEntry({ text, setAnalysis, setError, setIsLoading });
   };
 
   return (
@@ -156,89 +72,6 @@ const JournalForm = ({ initialValues }: JournalFormProps) => {
               <span>{characterCount} characters</span>
             </div>
           </div>
-
-          <div className="space-y-3">
-            <span className="text-sm font-medium text-muted-foreground">
-              Tags
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {journalTagSuggestions.map((tag: string) => {
-                const isActive = tags.includes(tag);
-                return (
-                  <Button
-                    key={tag}
-                    type="button"
-                    variant={isActive ? "default" : "outline"}
-                    size="sm"
-                    className={cn(
-                      "rounded-full text-xs",
-                      isActive && "bg-primary text-primary-foreground"
-                    )}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag}
-                  </Button>
-                );
-              })}
-            </div>
-            {inactiveSuggestions.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                All suggested tags are in use. Remove one to see it here again.
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              <span className="text-sm font-medium text-muted-foreground">
-                Mood
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {journalMoodOptions.map((option: string) => {
-                  const isActive = mood === option;
-                  return (
-                    <Button
-                      key={option}
-                      type="button"
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "text-xs",
-                        isActive && "bg-primary text-primary-foreground"
-                      )}
-                      onClick={() => setMood(isActive ? "" : option)}
-                    >
-                      {option}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label
-                htmlFor="stress"
-                className="flex items-center justify-between text-sm font-medium text-muted-foreground"
-              >
-                <span>Stress level</span>
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">
-                  {stressLevel}/10
-                </span>
-              </label>
-              <input
-                id="stress"
-                type="range"
-                min={1}
-                max={10}
-                value={stressLevel}
-                onChange={(event) => setStressLevel(Number(event.target.value))}
-                className="w-full accent-primary"
-              />
-              <p className="text-xs text-muted-foreground">
-                Slide to capture how intense things feel right now.
-              </p>
-            </div>
-          </div>
         </div>
 
         {error && (
@@ -252,17 +85,7 @@ const JournalForm = ({ initialValues }: JournalFormProps) => {
             type="button"
             variant="ghost"
             onClick={() => {
-              setText(
-                initialValues?.text ??
-                  "I feel overwhelmed with work but grateful for my family"
-              );
-              setMood(initialValues?.mood ?? "");
-              setStressLevel(initialValues?.stressLevel ?? 5);
-              setTags(
-                initialValues?.tags?.filter((tag) => tag && tag.trim()) ?? []
-              );
-              setAnalysis(null);
-              setError(null);
+              setText("");
             }}
             disabled={isLoading}
           >
@@ -283,7 +106,7 @@ const JournalForm = ({ initialValues }: JournalFormProps) => {
 
       {analysis && (
         <section className="mt-6 rounded-2xl border border-border/60 bg-card/80 p-6 shadow-lg backdrop-blur-sm transition duration-300 ease-out">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-foreground">
                 AI reflection
@@ -292,13 +115,14 @@ const JournalForm = ({ initialValues }: JournalFormProps) => {
                 Based on your latest entry
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground">
-                Stress {analysis.stressLevel}/10
-              </span>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
-                {analysis.mood}
-              </span>
+            <div className="flex items-center gap-4">
+              <StressStatus
+                stressLevel={analysis.stress_level}
+                mood={analysis.mood}
+              />
+              <div className="w-full sm:w-48">
+                <StressLevelBar stressLevel={analysis.stress_level} />
+              </div>
             </div>
           </div>
 
