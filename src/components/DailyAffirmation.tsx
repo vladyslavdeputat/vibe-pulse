@@ -35,6 +35,7 @@ const DailyAffirmation = () => {
         <Button
           type="button"
           size="lg"
+          className="cursor-pointer"
           onClick={() =>
             fetchAffirmation({ setAffirmation, setError, setIsLoading })
           }

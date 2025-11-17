@@ -71,11 +71,11 @@ const TablePaginated = <T,>({
   return (
     <section className="rounded-2xl border border-border/60 bg-card/80 shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-border/40 px-4 sm:px-6 py-4">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">{title}</h2>
           {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{description}</p>
           )}
         </div>
       </div>
@@ -88,7 +88,7 @@ const TablePaginated = <T,>({
               {headItemsArray.map((header, index) => (
                 <th
                   key={index}
-                  className={`px-6 py-3 text-left font-medium ${
+                  className={`px-3 sm:px-6 py-3 text-left font-medium text-xs sm:text-xs ${
                     header.className || ""
                   }`}
                 >
@@ -102,7 +102,7 @@ const TablePaginated = <T,>({
               <tr>
                 <td
                   colSpan={headItemsArray.length}
-                  className="px-6 py-12 text-center"
+                  className="px-4 sm:px-6 py-12 text-center"
                 >
                   <Loader2
                     className="size-16 animate-spin mx-auto"
@@ -114,7 +114,7 @@ const TablePaginated = <T,>({
               <tr>
                 <td
                   colSpan={headItemsArray.length}
-                  className="px-6 py-12 text-center text-destructive"
+                  className="px-4 sm:px-6 py-12 text-center text-destructive"
                 >
                   {error}
                 </td>
@@ -123,7 +123,7 @@ const TablePaginated = <T,>({
               <tr>
                 <td
                   colSpan={headItemsArray.length}
-                  className="px-6 py-12 text-center text-muted-foreground"
+                  className="px-4 sm:px-6 py-12 text-center text-muted-foreground"
                 >
                   {emptyMessage}
                 </td>
@@ -144,67 +144,84 @@ const TablePaginated = <T,>({
 
       {/* Pagination Controls */}
       {!isLoading && data.length > itemsPerPage && (
-        <div className="flex items-center justify-between border-t border-border/40 px-6 py-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, data.length)} of{" "}
-            {data.length} entries
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-
-            {/* Page Numbers */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => {
-                  // Show first page, last page, current page, and pages around current
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className="min-w-[2.5rem]"
-                      >
-                        {page}
-                      </Button>
-                    );
-                  } else if (
-                    page === currentPage - 2 ||
-                    page === currentPage + 2
-                  ) {
-                    return (
-                      <span key={page} className="px-2 text-muted-foreground">
-                        ...
-                      </span>
-                    );
-                  }
-                  return null;
-                }
-              )}
+        <div className="border-t border-border/40 px-4 sm:px-6 py-4">
+          {/* Mobile: Stack vertically */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Entry count - full width on mobile, auto on desktop */}
+            <div className="text-sm text-muted-foreground text-center sm:text-left">
+              Showing {startIndex + 1} to {Math.min(endIndex, data.length)} of{" "}
+              {data.length} entries
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            {/* Pagination controls */}
+            <div className="flex items-center justify-center gap-2">
+              {/* Previous Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex-1 sm:flex-initial"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              {/* Page Numbers - Hide on very small screens, show on sm+ */}
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => {
+                    // Show first page, last page, current page, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <span key={page} className="px-2 text-muted-foreground">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+                )}
+              </div>
+
+              {/* Mobile: Show current page indicator */}
+              <div className="flex items-center gap-2 sm:hidden">
+                <span className="text-sm font-medium text-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+
+              {/* Next Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex-1 sm:flex-initial"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
